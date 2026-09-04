@@ -2,7 +2,15 @@
         <div v-show="!isEditMode">
             <h1>User Profile</h1>
             <img :src="image">
+            
+            <button v-if="!showImageUpload" @click="showImageUpload = true">Upload Picture</button>
+            <div class="profile-img-upload" v-if="showImageUpload">
+                <label for="profile-img-upload">Upload Profile Image:</label>
+                <input id="profile-img-upload" type="file" accept="image/*" @change="handleImageUpload" />
+            </div>
 
+
+            <hr />
             <span>Name: </span><b id="name">{{ name }}</b>
             <hr />
 
@@ -44,7 +52,8 @@ export default {
                 name: "",
                 email: "",
                 interests: "",
-                isEditMode: false
+                isEditMode: false,
+                showImageUpload: false
                 }
             },
             async created() {
@@ -57,6 +66,18 @@ export default {
             handleEditProfile() {
                 this.isEditMode=true
             },
+            handleImageUpload(event) {
+                const file = event.target.files && event.target.files[0]
+                if (!file) {
+                    return
+                }
+                const reader = new FileReader()
+                reader.onload = (e) => {
+                    this.image = e.target.result
+                    this.showImageUpload = false
+                }
+                reader.readAsDataURL(file)
+            },
             async handleUpdateProfile() {
                 const payload = {
                     name: this.name,
@@ -67,12 +88,20 @@ export default {
                 console.log(resJson)
                 this.isEditMode = false
             },
+            async parseJsonResponse(res) {
+                const text = await res.text()
+                try {
+                    return JSON.parse(text)
+                } catch {
+                    return {}
+                }
+            },
             async fetchUserProfile() {
-                const res = await fetch('get-profile')
-                return await res.json()
+                const res = await fetch('/get-profile')
+                return await this.parseJsonResponse(res)
             },
             async updateUserProfile(payload) {
-                const res = await fetch('update-profile', {
+                const res = await fetch('/update-profile', {
                     method: "POST",
                     headers: {
                         'Content-Type': 'application/json',
@@ -80,7 +109,7 @@ export default {
                     },
                     body: JSON.stringify(payload)
                 })
-                return await res.json()
+                return await this.parseJsonResponse(res)
             }
         }
     }
@@ -89,7 +118,7 @@ export default {
 <style>
 img {
     width: 320px;
-    height: 270px;
+    height: auto;
     display: block;
     margin-bottom: 20px;
 }

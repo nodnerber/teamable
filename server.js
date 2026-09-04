@@ -17,30 +17,34 @@ app.use(bodyParser.json())
 app.use('/', express.static(__dirname + '/dist'))
 
 app.get('/get-profile', async function(req, res) {
+    try {
+        //connect to db
+        await client.connect()
+        console.log('Connected successfully to server')
 
-    //connect to db
-    await client.connect()
-    console.log('Connected successfully to server')
+        // initiates or get the db & collection
+        const db = client.db(dbName)
+        const collection = db.collection(collName)
 
-    // initiates or get the db & collection
-    const db = client.db(dbName)
-    const collection = db.collection(collName)
+        //get data from databse
+        const result = await collection.findOne({id: 1})
+        console.log(result)
+        client.close()
 
-    //get data from databse
-    const result = await collection.findOne({id: 1})
-    console.log(result)
-    client.close()
+        let response = {}
 
-    response = {}
-
-    if (result !== null) {
-        response = {
-            name: result.name,
-            email: result.email,
-            interests: result.interests
+        if (result !== null) {
+            response = {
+                name: result.name,
+                email: result.email,
+                interests: result.interests
+            }
         }
+        res.send(response)
+    } catch (err) {
+        console.error(err)
+        res.send({})
     }
-    res.send(response)
 })
 
 app.post('/update-profile', async function(req, res) {
